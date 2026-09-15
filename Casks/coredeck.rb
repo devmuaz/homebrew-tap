@@ -4,13 +4,17 @@ cask "coredeck" do
   
     url "https://github.com/devmuaz/CoreDeck/releases/download/v#{version}/coredeck-darwin-arm64.dmg"
     name "CoreDeck"
-    desc "A native desktop application around your Android SDK’s official emulator, avdmanager, and sdkmanager binaries. Use it for everyday work without opening Android Studio. Built with C++20 and Dear ImGui."
-    homepage "https://coredeck.dev"
+    desc "GUI for Android SDK emulator, avdmanager, and sdkmanager"
+    homepage "https://coredeck.dev/"
+  
+    depends_on macos: :monterey
   
     app "CoreDeck.app"
   
     zap trash: [
+      "~/.config/coredeck",
       "~/Library/Application Support/CoreDeck",
-      "~/Library/Preferences/com.coredeck.app.plist",
+      "~/Library/Preferences/com.devmuaz.coredeck.plist",
     ]
   end
+  
