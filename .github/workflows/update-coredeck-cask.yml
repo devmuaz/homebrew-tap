@@ -7,23 +7,35 @@ on:
 jobs:
   update-cask:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Update Cask File
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
-          VERSION="${{ github.event.client_payload.version }}"
-          SHA256="${{ github.event.client_payload.sha256 }}"
-          
           # Remove leading 'v' if present (e.g. v0.9.1 -> 0.9.1)
           CLEAN_VERSION="${VERSION#v}"
+
+          if [[ ! "$SHA256" =~ ^[a-fA-F0-9]{64}$ ]]; then
+            echo "Dispatch payload did not include a valid sha256; fetching from the GitHub release"
+            SHA256=$(curl -fsSL "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-arm64.dmg.sha256" | awk '{print $1}')
+          fi
+
+          if [[ ! "$SHA256" =~ ^[a-fA-F0-9]{64}$ ]]; then
+            echo "::error::Could not determine a valid sha256 for CoreDeck v${CLEAN_VERSION}"
+            exit 1
+          fi
 
           sed -i "s/version \".*\"/version \"$CLEAN_VERSION\"/" Casks/coredeck.rb
           sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" Casks/coredeck.rb
 
       - name: Commit and Push Changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "cask(coredeck): update to version ${{ github.event.client_payload.version }}"
           branch: main
