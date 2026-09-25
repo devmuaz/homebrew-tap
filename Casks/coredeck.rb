@@ -1,6 +1,6 @@
 cask "coredeck" do
-    version "0.10.0-beta.5"
-    sha256 "32e4877f4b859a45417d297782aadc97ee39c553f2eb84721cff86805be19878"
+    version "0.10.0"
+    sha256 "a870354719103c0c128d2278d9ee6ad06962bc0d1194518b7eb90ebd61018a0d"
   
     url "https://github.com/devmuaz/CoreDeck/releases/download/v#{version}/coredeck-darwin-arm64.dmg"
     name "CoreDeck"
