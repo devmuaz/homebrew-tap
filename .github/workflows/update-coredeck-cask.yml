@@ -1,3 +1,4 @@
+
 name: Update CoreDeck Cask
 
 on:
@@ -17,22 +18,36 @@ jobs:
         env:
           VERSION: ${{ github.event.client_payload.version }}
           SHA256: ${{ github.event.client_payload.sha256 }}
+          SHA256_X86_64: ${{ github.event.client_payload.sha256_x86_64 }}
         run: |
           # Remove leading 'v' if present (e.g. v0.9.1 -> 0.9.1)
           CLEAN_VERSION="${VERSION#v}"
 
-          if [[ ! "$SHA256" =~ ^[a-fA-F0-9]{64}$ ]]; then
-            echo "Dispatch payload did not include a valid sha256; fetching from the GitHub release"
-            SHA256=$(curl -fsSL "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-arm64.dmg.sha256" | awk '{print $1}')
+          is_sha256() {
+            [[ "$1" =~ ^[a-fA-F0-9]{64}$ ]]
+          }
+
+          fetch_sha256() {
+            curl -fsSL "$1" | awk '{print $1}'
+          }
+
+          if ! is_sha256 "$SHA256"; then
+            echo "Dispatch payload did not include a valid arm64 sha256; fetching from the GitHub release"
+            SHA256="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-arm64.dmg.sha256")" || SHA256=""
           fi
 
-          if [[ ! "$SHA256" =~ ^[a-fA-F0-9]{64}$ ]]; then
-            echo "::error::Could not determine a valid sha256 for CoreDeck v${CLEAN_VERSION}"
+          if ! is_sha256 "$SHA256_X86_64"; then
+            echo "Dispatch payload did not include a valid Intel sha256; fetching from the GitHub release"
+            SHA256_X86_64="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-x86-64.dmg.sha256")" || SHA256_X86_64=""
+          fi
+
+          if ! is_sha256 "$SHA256" || ! is_sha256 "$SHA256_X86_64"; then
+            echo "::error::Could not determine valid arm64 and Intel checksums for CoreDeck v${CLEAN_VERSION}"
             exit 1
           fi
 
           sed -i "s/version \".*\"/version \"$CLEAN_VERSION\"/" Casks/coredeck.rb
-          sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" Casks/coredeck.rb
+          sed -i "s/sha256 arm: \"[0-9a-fA-F]*\", intel: \"[0-9a-fA-F]*\"/sha256 arm: \"$SHA256\", intel: \"$SHA256_X86_64\"/" Casks/coredeck.rb
 
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v7
