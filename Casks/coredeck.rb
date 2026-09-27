@@ -1,9 +1,9 @@
 cask "coredeck" do
-  version "0.10.1"
+  version "0.11.0"
 
   arch arm: "arm64", intel: "x86-64"
 
-  sha256 arm: "10aec5d717621cdc6ab1d24e488ad1775d4a44436e6b0dc898c6b0c7d03495fa", intel: "054361be848f76d75c395cea4fc8b2687d6beb403764d41f9c581e1c4eca2e95"
+  sha256 arm: "f6be934b9e91661a3d238aa9b581f64c991a2aa44c84e63ad8304f1989379be5", intel: "88098ab630b04b4e42dd10c28c7dde9ef90ac5f437aba01e93bbef48dd2db240"
 
   url "https://github.com/devmuaz/CoreDeck/releases/download/v#{version}/coredeck-darwin-#{arch}.dmg"
   name "CoreDeck"
