@@ -4,8 +4,18 @@ This is the official [Homebrew](https://brew.sh/) tap for applications developed
 
 ## Quick Start
 
-To install any application from this tap, run:
+CoreDeck is published for macOS and Linux from this tap.
+
+macOS (Apple Silicon and Intel):
 
 ```bash
-brew install --cask devmuaz/tap/<app-name>
+brew install --cask devmuaz/tap/coredeck
 ```
+
+Linux (ARM64 and x86-64):
+
+```bash
+brew install devmuaz/tap/coredeck
+```
+
+The Linux build needs glibc 2.38 or newer, such as Ubuntu 24.04 or newer.

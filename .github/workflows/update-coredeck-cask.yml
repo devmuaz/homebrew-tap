@@ -1,12 +1,12 @@
 
-name: Update CoreDeck Cask
+name: Update CoreDeck
 
 on:
   repository_dispatch:
-    types: [update-cask]
+    types: [update-homebrew]
 
 jobs:
-  update-cask:
+  update-homebrew:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -14,11 +14,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Update Cask File
+      - name: Update Cask and Formula
         env:
           VERSION: ${{ github.event.client_payload.version }}
-          SHA256: ${{ github.event.client_payload.sha256 }}
-          SHA256_X86_64: ${{ github.event.client_payload.sha256_x86_64 }}
+          SHA256_DARWIN_ARM64: ${{ github.event.client_payload.sha256_darwin_arm64 }}
+          SHA256_DARWIN_X86_64: ${{ github.event.client_payload.sha256_darwin_x86_64 }}
+          SHA256_LINUX_ARM64: ${{ github.event.client_payload.sha256_linux_arm64 }}
+          SHA256_LINUX_X86_64: ${{ github.event.client_payload.sha256_linux_x86_64 }}
         run: |
           # Remove leading 'v' if present (e.g. v0.9.1 -> 0.9.1)
           CLEAN_VERSION="${VERSION#v}"
@@ -31,26 +33,44 @@ jobs:
             curl -fsSL "$1" | awk '{print $1}'
           }
 
-          if ! is_sha256 "$SHA256"; then
-            echo "Dispatch payload did not include a valid arm64 sha256; fetching from the GitHub release"
-            SHA256="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-arm64.dmg.sha256")" || SHA256=""
+          if ! is_sha256 "$SHA256_DARWIN_ARM64"; then
+            echo "Dispatch payload did not include a valid darwin arm64 sha256; fetching from the GitHub release"
+            SHA256_DARWIN_ARM64="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-arm64.dmg.sha256")" || SHA256_DARWIN_ARM64=""
           fi
 
-          if ! is_sha256 "$SHA256_X86_64"; then
-            echo "Dispatch payload did not include a valid Intel sha256; fetching from the GitHub release"
-            SHA256_X86_64="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-x86-64.dmg.sha256")" || SHA256_X86_64=""
+          if ! is_sha256 "$SHA256_DARWIN_X86_64"; then
+            echo "Dispatch payload did not include a valid darwin x86-64 sha256; fetching from the GitHub release"
+            SHA256_DARWIN_X86_64="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-darwin-x86-64.dmg.sha256")" || SHA256_DARWIN_X86_64=""
           fi
 
-          if ! is_sha256 "$SHA256" || ! is_sha256 "$SHA256_X86_64"; then
-            echo "::error::Could not determine valid arm64 and Intel checksums for CoreDeck v${CLEAN_VERSION}"
+          if ! is_sha256 "$SHA256_LINUX_ARM64"; then
+            echo "Dispatch payload did not include a valid Linux arm64 sha256; fetching from the GitHub release"
+            SHA256_LINUX_ARM64="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-linux-arm64.tar.gz.sha256")" || SHA256_LINUX_ARM64=""
+          fi
+
+          if ! is_sha256 "$SHA256_LINUX_X86_64"; then
+            echo "Dispatch payload did not include a valid Linux x86-64 sha256; fetching from the GitHub release"
+            SHA256_LINUX_X86_64="$(fetch_sha256 "https://github.com/devmuaz/CoreDeck/releases/download/v${CLEAN_VERSION}/coredeck-linux-x86-64.tar.gz.sha256")" || SHA256_LINUX_X86_64=""
+          fi
+
+          if ! is_sha256 "$SHA256_DARWIN_ARM64" || ! is_sha256 "$SHA256_DARWIN_X86_64" || ! is_sha256 "$SHA256_LINUX_ARM64" || ! is_sha256 "$SHA256_LINUX_X86_64"; then
+            echo "::error::Could not determine valid macOS and Linux checksums for CoreDeck v${CLEAN_VERSION}"
             exit 1
           fi
 
           sed -i "s/version \".*\"/version \"$CLEAN_VERSION\"/" Casks/coredeck.rb
-          sed -i "s/sha256 arm: \"[0-9a-fA-F]*\", intel: \"[0-9a-fA-F]*\"/sha256 arm: \"$SHA256\", intel: \"$SHA256_X86_64\"/" Casks/coredeck.rb
+          sed -i -E "s|(download/v)[^/]+(/coredeck-linux-)|\\1${CLEAN_VERSION}\\2|" Formula/coredeck.rb
+          grep -q "version \"$CLEAN_VERSION\"" Casks/coredeck.rb
+          grep -q "download/v${CLEAN_VERSION}/coredeck-linux-" Formula/coredeck.rb
+
+          sed -i "s/sha256 arm: \"[0-9a-fA-F]*\", intel: \"[0-9a-fA-F]*\"/sha256 arm: \"$SHA256_DARWIN_ARM64\", intel: \"$SHA256_DARWIN_X86_64\"/" Casks/coredeck.rb
+          sed -i -E "s/arm:[[:space:]]+\"[0-9a-fA-F]{64}\"/arm:   \"$SHA256_LINUX_ARM64\"/" Formula/coredeck.rb
+          sed -i -E "s/intel:[[:space:]]*\"[0-9a-fA-F]{64}\"/intel: \"$SHA256_LINUX_X86_64\"/" Formula/coredeck.rb
+          grep -q "$SHA256_LINUX_ARM64" Formula/coredeck.rb
+          grep -q "$SHA256_LINUX_X86_64" Formula/coredeck.rb
 
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: "cask(coredeck): update to version ${{ github.event.client_payload.version }}"
+          commit_message: "coredeck: update to version ${{ github.event.client_payload.version }}"
           branch: main
