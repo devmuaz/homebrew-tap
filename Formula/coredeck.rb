@@ -11,7 +11,8 @@ class Coredeck < Formula
 
   def install
     # Fonts and icons are loaded from the directory that contains the binary.
-    libexec.install Dir["coredeck-linux-*/*"]
+    # Homebrew already enters the tarball's single top-level directory when staging.
+    libexec.install Dir["*"]
     bin.install_symlink libexec/"CoreDeck" => "coredeck"
 
     (share/"applications").mkpath
