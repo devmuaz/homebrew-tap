@@ -2,9 +2,9 @@ class Coredeck < Formula
   desc "Command center GUI for the Android SDK (sdkmanager, avdmanager, etc.)"
   homepage "https://coredeck.dev/"
   linux_arch = on_arch_conditional arm: "arm64", intel: "x86-64"
-  url "https://github.com/devmuaz/CoreDeck/releases/download/v0.15.0/coredeck-linux-#{linux_arch}.tar.gz"
-  sha256 on_arch_conditional arm:   "4a126211825e06291f095a59cec8d70b6add39c54c04e9f80f7429dec2986ff5",
-                             intel: "21d545acd75d6d7513910f82e19d334888abc6b231d53e99fabd9c98511e857d"
+  url "https://github.com/devmuaz/CoreDeck/releases/download/v0.15.1-beta.1/coredeck-linux-#{linux_arch}.tar.gz"
+  sha256 on_arch_conditional arm:   "4983167b3b92f3ac6da07de3d72e1ff12d470cba0d38eed174659909672b2c53",
+                             intel: "93a1882a5ebcea96fcf7833492e3eb5451a98b4c463a0863aa9e3c4b637de59d"
   license "MIT"
 
   depends_on :linux
